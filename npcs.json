@@ -1,0 +1,20 @@
+{
+  "npcs": [
+    {
+      "id": "guard_01",
+      "name": "Town Guard",
+      "type": "human",
+      "spawn": { "x": 208.65, "y": 6.9, "z": 549 },
+      "behavior": "idle",
+      "wanderRadius": 5.0
+    },
+    {
+      "id": "wolf_01",
+      "name": "Forest Wolf",
+      "type": "animal",
+      "spawn": { "x": 180.0, "y": 6.5, "z": 580.0 },
+      "behavior": "wander",
+      "wanderRadius": 20.0
+    }
+  ]
+}
