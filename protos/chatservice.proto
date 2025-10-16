@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package chat;
+
+// === Messages first ===
+message StreamRequest {
+  string playerId = 1;
+  repeated string channels = 2; // channels to subscribe to
+}
+
+message ChatMessage {
+  string channel = 1;
+  string playerId = 2;
+  string text = 3;
+  int64 timestamp = 4;
+}
+
+message WhisperRequest {
+  string fromPlayerId = 1;
+  string toPlayerId = 2;
+  string text = 3;
+  int64 timestamp = 4;
+}
+
+message CreateChannelRequest {
+  string name = 1;
+  string creatorId = 2;
+}
+
+message Ack {
+  bool success = 1;
+  string error = 2;
+}
+
+// === Service AFTER all messages ===
+service ChatService {
+  // Stream for receiving live chat messages
+  rpc StreamMessages(StreamRequest) returns (stream ChatMessage);
+
+  // Send a new message
+  rpc SendMessage(ChatMessage) returns (Ack);
+
+  // Create a new channel
+  rpc CreateChannel(CreateChannelRequest) returns (Ack);
+
+  // Whisper to a specific player
+  rpc SendWhisper(WhisperRequest) returns (Ack);
+}

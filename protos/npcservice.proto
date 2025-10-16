@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package npc;
+
+service NPCService {
+	//spawn a new NPC
+	rpc SpawnNPc(NPCSpawnRequest) returns (NPCSpawnResponse);
+	
+	//Move NPC - server decides next random walk step
+	rpc WalkNPC(NPCWalkRequest) returns (NPCWalkResponse);
+	
+	//Despawn a NPC
+	rpc DespawnNPC(NPCDeSpawnRequest) returns (NPCDespanwResponse);
+	
+	// Stream all active NPC Updates
+	rpc StreamNPcs(NPCStreamReqest) returns (stream NPCUpdate);
+}
+
+message NPCSpawnRequest {
+	string npc_type = 1;
+	float x = 2;
+	float y = 3;
+	float z = 4;
+}
+
+message NPCSpawnResponse {
+	string npc_id = 1;
+	bool success = 2;
+}
+
+message NPCWalkRequest {
+	string npc_id = 1;
+	bool success = 2;
+}
+
+
+message NPCWalkResponse {
+	string npc_id = 1;
+	float x = 2;
+	float y = 3;
+	float z = 4;
+	string state = 5;
+}
+
+message NPCDeSpawnRequest {
+	string npc_id = 1;
+}
+
+message NPCDespanwResponse {
+	bool success = 1;
+}
+
+message NPCStreamReqest {
+	repeated string npc_types = 1;
+}
+
+message NPCUpdate {
+	string npc_id = 1;
+	string npc_type = 2;
+	float x = 3;
+	float y = 4;
+	float z = 5;
+	string state = 6;
+	int64 timestamp = 7;
+}
