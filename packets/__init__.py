@@ -39,3 +39,14 @@ __all__ = [
     "parse_raw_packet",
     "register_packet",
 ]
+
+# Import concrete packet modules so they register themselves on package import
+# This keeps registration centralized: adding a new packet module should be
+# added here so it's picked up automatically.
+from . import ping  # noqa: F401
+from . import player_join  # noqa: F401
+from . import player_move  # noqa: F401
+from . import chat as chat_packets  # noqa: F401
+from . import npc as npc_packets  # noqa: F401
+from . import world_update as world_packets  # noqa: F401
+from . import other as other_packets  # noqa: F401

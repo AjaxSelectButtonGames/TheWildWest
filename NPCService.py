@@ -110,7 +110,7 @@ class NPCService(npc_grpc.NPCServiceServicer):
         print(f"[NPC] Spawned NPC {npc_id} at ({request.x}, {request.y}, {request.z})")
         return npc_pb2.NPCAck(success=True, npcId=npc_id)
 
-     def WalkNPC(self, request, context):
+    def WalkNPC(self, request, context):
         npc_id = request.npcId
         if npc_id not in self.npcs:
             return npc_pb2.NPCAck(success=False, error="NPC not found")
