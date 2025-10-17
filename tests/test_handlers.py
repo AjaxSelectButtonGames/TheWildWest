@@ -37,6 +37,10 @@ class MinimalServer(SimpleNamespace):
         self.spawn_points = [(0, 0, 0)]
         self.max_speed = 10.0
         self.world_bounds = {"min_x": -100, "max_x": 100, "min_y": -10, "max_y": 10, "min_z": -100, "max_z": 100}
+        # new attributes used by handlers
+        self.writers_by_id = {}
+        self.nicknames = {}
+        self.nickname_to_id = {}
 
     async def send(self, writer, packet_id, data):
         writer.write(str({"id": packet_id, "data": data}).encode())

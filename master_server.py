@@ -22,6 +22,11 @@ class MasterServer:
         self.client_positions = {}  # player_id -> (x, y, z)
         # New: Track last move time for velocity/speed check
         self.last_move_times = {} # player_id -> timestamp
+        # writer registry for quick lookup: player_id -> writer
+        self.writers_by_id = {}
+        # nicknames
+        self.nicknames = {}  # player_id -> nickname
+        self.nickname_to_id = {}  # nickname -> player_id
         
         self.spawn_points = [
             (208.6597, 6.989525, 545.12),  # spawnpoint1

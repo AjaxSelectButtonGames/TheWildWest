@@ -20,6 +20,11 @@ async def handle_player_join(server, writer, packet_or_data):
     server.clients[writer] = assigned_id
     server.client_positions[assigned_id] = spawn_pos
     server.last_move_times[assigned_id] = time.time()
+    # Register writer and default nickname
+    server.writers_by_id[assigned_id] = writer
+    default_nick = data.get("nickname") or assigned_id
+    server.nicknames[assigned_id] = default_nick
+    server.nickname_to_id[default_nick] = assigned_id
 
     print(f"[JOIN] Player {assigned_id} joined at {spawn_pos}")
     await server.send(writer, PacketType.PLAYER_ID_ASSIGNED, {
