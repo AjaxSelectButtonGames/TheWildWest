@@ -69,30 +69,41 @@ public class MasterServerClient : MonoBehaviour
 
         cts = new CancellationTokenSource();
         handshakeTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _ = Task.Run(() => ListenForMessages(cts.Token));
-
-        // Wait for the server handshake (nonce)
-        string nonce = null;
+        // Establish TCP connection first
         try
         {
-            nonce = await Task.WhenAny(handshakeTcs.Task, Task.Delay(5000)).Result; // simplified
+            client = new TcpClient();
+            await client.ConnectAsync(serverIP, serverPort);
+            stream = client.GetStream();
         }
-        catch
+        catch (Exception e)
         {
-            // fallback: wait with timeout
-            if (!handshakeTcs.Task.Wait(5000))
-            {
-                Debug.LogError("[CLIENT] Handshake timeout - closing connection.");
-                client.Close();
-                return;
-            }
+            Debug.LogError($"[CLIENT] Failed to connect to server {serverIP}:{serverPort} - {e.Message}");
+            client?.Close();
+            return;
+        }
+
+        // Start reader loop after stream is available
+        _ = Task.Run(() => ListenForMessages(cts.Token));
+
+        // Wait for the server handshake (nonce) with a timeout
+        string nonce = null;
+        var completed = await Task.WhenAny(handshakeTcs.Task, Task.Delay(5000));
+        if (completed == handshakeTcs.Task && handshakeTcs.Task.IsCompleted)
+        {
             nonce = handshakeTcs.Task.Result;
+        }
+        else
+        {
+            Debug.LogError("[CLIENT] Handshake timeout - closing connection.");
+            try { client.Close(); } catch { }
+            return;
         }
 
         if (string.IsNullOrEmpty(nonce))
         {
             Debug.LogError("[CLIENT] No handshake nonce received; aborting.");
-            client.Close();
+            try { client.Close(); } catch { }
             return;
         }
 
