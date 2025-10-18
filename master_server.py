@@ -6,6 +6,9 @@ import grpc
 import time
 import math
 import threading 
+import os
+import hmac
+import hashlib
 from protocol import PacketType
 from packets import parse_raw_packet
 from generated import chatservice_pb2, chatservice_pb2_grpc
@@ -53,6 +56,11 @@ class MasterServer:
         
         self.heightmap = None
         self.colliders = []
+
+        # Handshake state: writer -> nonce
+        self.handshake_nonces = {}
+        # Server secret for HMAC (in a real deployment store this securely)
+        self.server_secret = "dev-secret-change-me"
         
     def get_height_at(self, x, z):
         """Placeholder for heightmap lookup."""
@@ -77,6 +85,11 @@ class MasterServer:
     async def handle_client(self, reader, writer):
         addr = writer.get_extra_info("peername")
         print(f"[CONNECT] {addr}")
+
+        # Issue handshake challenge (nonce) immediately on new connection
+        nonce = os.urandom(16).hex()
+        self.handshake_nonces[writer] = nonce
+        await self.send(writer, PacketType.HANDSHAKE_CHALLENGE, {"nonce": nonce})
 
         try:
             while True:
@@ -128,6 +141,45 @@ class MasterServer:
 
         if packet_id == PacketType.PING:
             await self.send(writer, PacketType.PONG, {"msg": "pong"})
+
+        # Handshake/Authentication: expect PLAYER_JOIN to include 'ts' and 'hmac' proving possession of secret
+        if packet_id == PacketType.PLAYER_JOIN:
+            # Data may be parsed from packet object or dict
+            ts = data.get("ts")
+            proof = data.get("hmac")
+            preferred_id = data.get("preferredId")
+            nonce = self.handshake_nonces.pop(writer, None)
+            if nonce is None:
+                print(f"[AUTH] No handshake nonce for client, rejecting join from {writer}")
+                # Disconnect
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            # Validate timestamp
+            try:
+                ts = int(ts)
+            except Exception:
+                print(f"[AUTH] Invalid timestamp from client, rejecting")
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            now = int(time.time())
+            if abs(now - ts) > 30:
+                print(f"[AUTH] Timestamp outside allowed window: {ts} (now {now})")
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            # Validate HMAC: HMAC_SHA256(server_secret, nonce + preferredId + ts)
+            msg = (nonce + (preferred_id or "") + str(ts)).encode()
+            expected = hmac.new(self.server_secret.encode(), msg, hashlib.sha256).hexdigest()
+            if not proof or not hmac.compare_digest(expected, proof):
+                print(f"[AUTH] HMAC verification failed for client {writer}")
+                writer.close()
+                await writer.wait_closed()
+                return
 
         # Handler map lookup (overrides inline logic)
         HANDLERS = {

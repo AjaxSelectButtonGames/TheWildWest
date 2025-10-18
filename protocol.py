@@ -11,3 +11,5 @@ class PacketType:
     NPC_SPAWN = 10
     NPC_UPDATE = 11
     NPC_DESPAWN = 12
+    # Handshake packet (server -> client) containing a nonce to prevent unauthenticated clients
+    HANDSHAKE_CHALLENGE = 100
